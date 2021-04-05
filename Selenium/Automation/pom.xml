@@ -3,13 +3,30 @@
   <groupId>com.twitter.automation</groupId>
   <artifactId>TwitterAutomation</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>Twitter Automation using Java</name>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <name>Twitter Automation using Java</name>
   <dependencies>
 	  <dependency>
 	        <groupId>org.seleniumhq.selenium</groupId>
 	        <artifactId>selenium-java</artifactId>
 	        <version>3.141.59</version>
 	    </dependency>
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-chrome-driver</artifactId>
+        <version>3.141.59</version>
+      </dependency>
 	    <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
