@@ -23,7 +23,7 @@ public class Application {
 	
 	static String userName="";
 	static String passWord="";
-	static String twitterBaseURL = "https://twitter.com/";
+	static String twitterBaseURL = "https://reddit.com/";
 	static String login = "login";
 	static String home = "home";
 	static int totalScrolls = 10;
@@ -39,7 +39,7 @@ public class Application {
 		options.addArguments("--disable-browser-side-navigation"); 
 		options.addArguments("--disable-gpu"); 
 		
-		System.setProperty("webdriver.chrome.driver", "/Users/suhas/ASU_Course/Spring2021/SWM/project/chromedriver");
+		System.setProperty("webdriver.chrome.driver", "chromedriver");
 		WebDriver driver = new ChromeDriver(options);
 		
 		

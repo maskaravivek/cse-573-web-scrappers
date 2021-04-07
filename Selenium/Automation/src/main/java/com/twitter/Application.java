@@ -21,8 +21,8 @@ import java.util.List;
 
 public class Application {
 	
-	static String userName="";
-	static String passWord="";
+	static String userName="maskaravivek";
+	static String passWord="0FF1cer@vvk123";
 	static String twitterBaseURL = "https://twitter.com/";
 	static String login = "login";
 	static String home = "home";
@@ -39,7 +39,7 @@ public class Application {
 		options.addArguments("--disable-browser-side-navigation"); 
 		options.addArguments("--disable-gpu"); 
 		
-		System.setProperty("webdriver.chrome.driver", "/Users/suhas/ASU_Course/Spring2021/SWM/project/chromedriver");
+		System.setProperty("webdriver.chrome.driver", "chromedriver");
 		WebDriver driver = new ChromeDriver(options);
 		
 		
