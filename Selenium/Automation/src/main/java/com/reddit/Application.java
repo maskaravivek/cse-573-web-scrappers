@@ -21,9 +21,9 @@ import java.util.List;
 
 public class Application {
 	
-	static String userName="";
-	static String passWord="";
-	static String twitterBaseURL = "https://reddit.com/";
+	static String userName="WorthAd6175";
+	static String passWord="7~9$r5fZ2xR9#pQ";
+	static String redditBaseURL = "https://reddit.com/";
 	static String login = "login";
 	static String home = "home";
 	static int totalScrolls = 10;
@@ -135,7 +135,7 @@ public class Application {
 	
 	public static void getAllTweetsOfAUser(WebDriver driver,String twitterUsername,int totalScrolls) throws InterruptedException{
 		
-		String profileURL = new StringBuilder(twitterBaseURL).append(twitterUsername).toString();
+		String profileURL = new StringBuilder(redditBaseURL).append(twitterUsername).toString();
 		driver.get(profileURL);
 		Thread.sleep(20000);
 		
@@ -175,17 +175,17 @@ public class Application {
 	 */
 	
 	public static void login(WebDriver driver) throws InterruptedException{
-		String twitterLoginURL = new StringBuilder(twitterBaseURL).append(login).toString();
+		String twitterLoginURL = new StringBuilder(redditBaseURL).append(login).toString();
 		driver.get(twitterLoginURL);
 		driver.manage().window().maximize();
-		Thread.sleep(20000);
-		WebElement userTextField = driver.findElement(By.name("session[username_or_email]"));
+		Thread.sleep(1000);
+		WebElement userTextField = driver.findElement(By.id("loginUsername"));
 		userTextField.sendKeys(userName);
 
-		WebElement PassTextField = driver.findElement(By.name("session[password]"));
+		WebElement PassTextField = driver.findElement(By.id("loginPassword"));
 		PassTextField.sendKeys(passWord);
 
-		driver.findElement(By.xpath("//div[@data-testid='LoginForm_Login_Button']")).click();
+		driver.findElement(By.className("AnimatedForm__submitButton")).click();
 	}
 	
 	
@@ -233,7 +233,7 @@ public class Application {
 	 */
 	
 	public static void tweet(WebDriver driver,String tweetBody) throws InterruptedException{
-		String homeURL = new StringBuilder(twitterBaseURL).append(home).toString();
+		String homeURL = new StringBuilder(redditBaseURL).append(home).toString();
 		driver.get(homeURL);
 		Thread.sleep(10000);
 		WebElement tweetTextBox = driver.findElement(By.xpath("//div[@data-testid='tweetTextarea_0']/div/div/div/span"));
