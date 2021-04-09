@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+const puppeteer = require('puppeteer');
 
 const BASE_URL = "https://old.reddit.com";
 const SUBREDDIT_URL = subreddit => `${BASE_URL}/r/${subreddit}`;

@@ -6,11 +6,43 @@ const getTwitterPosts = require('./twitter/getTweets.js')
 const reddit = require("./reddit/getReddit.js");
 // const db = require('./db.js');
 
-const app = express();
+
+async function callReddit(){
 
 
+  (async () => {
+    await reddit.initialize("asu", {
+      headless: true,
+      devtools: false
+    });
+    const results = await reddit.getLatest({
+      type: "hot",
+      number: 150
+      // keywords: ["appointment", "reminder"]
+    });
+  
+    if (!results.length) {
+      console.log("No results");
+    }
+  
+    results.forEach(result => {
+      console.log("\n");
+      // console.log(result)
+      console.log(`Title: ${result.title}`);
+      console.log(`Link: ${result.link}`);
+      console.log(`Time Posted: ${result.postTime}`);
+      console.log(`Number of Comments: ${result.commentsNo}`);
+      console.log(`Upvotes: ${result.score}`);
+      console.log("\n");
+    });
+  
+    await reddit.close();
+  })();
+}
 
-const pageScrollLength = 1;
+/*const app = express();
+
+const pageScrollLength = 5;
 const accountNo = 1;
 
 app.get('/', (req, res) => {
@@ -21,56 +53,7 @@ app.get('/', (req, res) => {
 });
 
 
-async function callReddit(){
 
-
-(async () => {
-  await reddit.initialize("asu", {
-    headless: true,
-    devtools: false
-  });
-
-  // const results = await reddit.get();
-  // const results = await reddit.get({
-  //   type: "new",
-  //   number: 10
-  // });
-  // const results = await reddit.get({
-  //   limit: 5
-  // });
-
-  // const results = await reddit.searchFor(["reminder", "appointment"]).get(5);
-  // const results = await reddit
-  //   .searchFor(["reminder", "appointment"])
-  //   .get({ limit: 5 });
-
-  // const results = await reddit.getLatestHot();
-  // const results = await reddit.getLatestNew();
-
-  const results = await reddit.getLatest({
-    type: "hot",
-    number: 150
-    // keywords: ["appointment", "reminder"]
-  });
-
-  if (!results.length) {
-    console.log("No results");
-  }
-
-  results.forEach(result => {
-    console.log("\n");
-    // console.log(result)
-    console.log(`Title: ${result.title}`);
-    console.log(`Link: ${result.link}`);
-    console.log(`Time Posted: ${result.postTime}`);
-    console.log(`Number of Comments: ${result.commentsNo}`);
-    console.log(`Upvotes: ${result.score}`);
-    console.log("\n");
-  });
-
-  await reddit.close();
-})();
-}
 // URL: http://0.0.0.0:9000/facebook/getPosts
 
 app.get('/facebook/getPosts', async (req, res) => {
@@ -114,3 +97,35 @@ app.listen(PORT,hostname, () => {
 // [END gae_node_request_example]
 
 module.exports = app;
+
+*/
+
+var arg_values = process.argv.slice(2);
+console.log('arguments passed: ', arg_values);
+
+var pageScrollLength = 0;
+var accountNo = 1;
+
+switch (arg_values[0]) {
+    case 'facebook':
+        pageScrollLength = arg_values[1];
+        (async () => {
+          await getFbPosts.getAllGroup(pageScrollLength,accountNo);
+        })();
+        break;
+    case 'twitter':
+        (async () => {
+          var keywords = ["diabetes","Insulin","neuropathy","humalog"];
+          pageScrollLength = arg_values[1];
+          await getTwitterPosts.scrapeTweets(pageScrollLength,accountNo,keywords);
+        })();
+        break;
+    case 'reddit':
+        (async () => {
+          await callReddit();
+        })(); 
+        break;
+    default:
+        console.log('Sorry unable to run the script, passed wrong arguments.');
+        break;
+}

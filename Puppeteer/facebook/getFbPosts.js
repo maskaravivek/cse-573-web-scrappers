@@ -5,31 +5,8 @@ const {JSDOM} = jsdom
 const HashMap = require('hashmap');
 var fs = require("fs");
 global.DOMParser = new JSDOM().window.DOMParser
-const isHeadless = false;
+const isHeadless = true;
 
-
-async function scroll(page, scrollDelay = 1000) {
-    let previousHeight;
-    try {
-        while (mutationsSinceLastScroll > 0 || initialScrolls > 0) {
-            mutationsSinceLastScroll = 0;
-            initialScrolls--;
-            previousHeight = await page.evaluate(
-                'document.body.scrollHeight'
-            );
-            await page.evaluate(
-                'window.scrollTo(0, document.body.scrollHeight)'
-            );
-            await page.waitForFunction(
-                `document.body.scrollHeight > ${previousHeight}`,
-                {timeout: 600000}
-            ).catch(e => console.log('scroll failed'));
-            await page.waitForTimeout(scrollDelay);
-        }
-    } catch (e) {
-        console.log(e);
-    }
-}
 
 async function autoScroll(page) {
     try {
@@ -224,7 +201,7 @@ async function goToGroup(page, groupId,pageScrollLength) {
 async function logIn(page,email,password) {
         await page.goto('https://m.facebook.com/',
         {waitUntil: 'networkidle2'})
-        
+        await page.screenshot({path: 'buddy-screenshot.png'});
         await page.waitForSelector('input[name="email"]')
         await page.type('input[name="email"]', email)
         await page.type('input[name="pass"]', password)
