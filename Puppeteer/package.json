@@ -1,0 +1,55 @@
+{
+  "name": "appengine-hello-world",
+  "description": "Simple Hello World Node.js sample for Google App Engine Standard Environment.",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "Google Inc.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoogleCloudPlatform/nodejs-docs-samples.git"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "runtime": "nodejs8",
+  "instance_class": "F4",
+  "scripts": {
+    "start": "node app.js",
+    "test": "mocha --exit test/*.test.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.782.0",
+    "axios": "^0.21.1",
+    "browserless": "^8.1.27",
+    "express": "^4.17.1",
+    "extract-zip": "^2.0.1",
+    "hashmap": "^2.4.0",
+    "html-encoding-sniffer": "^2.0.1",
+    "ip": "^1.1.5",
+    "jsdom": "^16.3.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.1.0",
+    "nodemon": "^2.0.4",
+    "open-ssh-tunnel": "^0.3.1",
+    "pg": "^8.4.2",
+    "pn": "^1.1.0",
+    "puppeteer": "^5.5.0",
+    "sequelize": "^5.21.8",
+    "sequelize-auto": "^0.6.3",
+    "ssh2": "^0.8.9",
+    "tough-cookie": "^4.0.0",
+    "tunnel-ssh": "^4.1.4",
+    "websocket": "^1.0.32",
+    "whatwg-url": "^8.3.0"
+  },
+  "devDependencies": {
+    "mocha": "^7.1.2",
+    "supertest": "^4.0.2"
+  },
+  "bugs": {
+    "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples/issues"
+  },
+  "homepage": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples#readme",
+  "main": "app.js"
+}

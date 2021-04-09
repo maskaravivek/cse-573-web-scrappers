@@ -1,1 +1,6 @@
 .DS_Store
+Puppeteer/node_modules/*
+Puppeteer/facebook/myUserDataDir/*
+Puppeteer/twitter/myUserDataDir/*
+# Puppeteer/facebook/data/*
+# Puppeteer/twitter/data/*
