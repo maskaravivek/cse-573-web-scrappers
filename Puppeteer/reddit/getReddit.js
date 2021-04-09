@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-
+var fs = require("fs");
 const BASE_URL = "https://old.reddit.com";
 const SUBREDDIT_URL = subreddit => `${BASE_URL}/r/${subreddit}`;
 
@@ -138,7 +138,7 @@ const self = {
         'p[class="tagline "] > a[class*="author"]',
         node => node.innerText.trim()
       );
-      const score = await element.$eval('div[class="score likes"]', node =>
+      const upvotes = await element.$eval('div[class="score likes"]', node =>
         node.innerText.trim()
       );
       const commentsNo = await element.$eval(
@@ -148,13 +148,13 @@ const self = {
 
       results.push({
         title,
+        commentsNo,
+        upvotes,
         link,
-        rank,
+        // rank,
         postTime,
-        authorUrl,
-        authorName,
-        score,
-        commentsNo
+        // authorUrl,
+        authorName
       });
     }
 
@@ -177,7 +177,56 @@ const self = {
 
     await newTabButton.click();
     await self.page.waitForNavigation({ waitUntil: "networkidle2" });
-  }
+  },
+
+  scrapReddit: async () =>{
+	
+		await self.initialize("asu", {
+		  headless: true,
+		  devtools: false
+		});
+		const results = await self.getLatest({
+		  type: "hot",
+		  number: 150
+		  // keywords: ["appointment", "reminder"]
+		});
+	  
+		if (!results.length) {
+		  console.log("No results");
+		}
+	  
+		results.forEach(result => {
+		  console.log("\n");
+		  // console.log(result)
+		  console.log(`Title: ${result.title}`);
+		  console.log(`Number of Comments: ${result.commentsNo}`);
+		  console.log(`Number of Upvotes: ${result.score}`);
+		  console.log(`Posted By: ${result.authorName}`)
+		  console.log(`Time Posted: ${result.postTime}`);
+		  console.log(`Post URL: ${result.link}`);
+		//   console.log("\n");
+		});
+		var d = new Date();
+		var fileName= d.getTime();
+		var dir = './reddit/data';
+	
+		if (!fs.existsSync(dir)){
+			fs.mkdirSync(dir);
+		}
+	
+		fs.writeFile("./reddit/data/"+String(fileName)+'.json', JSON.stringify(results), (err) => {
+			// throws an error, you could also catch it here
+			if (err) throw err;
+			// success case, the file was saved
+			console.log("\n");
+			console.log('Posts are Saved in the file! ' + String(fileName) );
+		});
+	
+	
+		await self.close();
+}
+
 };
+
 
 module.exports = self;

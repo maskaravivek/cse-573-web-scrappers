@@ -5,40 +5,57 @@ const getFbPosts = require('./facebook/getFbPosts.js')
 const getTwitterPosts = require('./twitter/getTweets.js')
 const reddit = require("./reddit/getReddit.js");
 // const db = require('./db.js');
+// var fs = require("fs");
 
+// async function callReddit(){
 
-async function callReddit(){
-
-
-  (async () => {
-    await reddit.initialize("asu", {
-      headless: true,
-      devtools: false
-    });
-    const results = await reddit.getLatest({
-      type: "hot",
-      number: 150
-      // keywords: ["appointment", "reminder"]
-    });
+//   (async () => {
+//     await reddit.initialize("asu", {
+//       headless: true,
+//       devtools: false
+//     });
+//     const results = await reddit.getLatest({
+//       type: "hot",
+//       number: 150
+//       // keywords: ["appointment", "reminder"]
+//     });
   
-    if (!results.length) {
-      console.log("No results");
-    }
+//     if (!results.length) {
+//       console.log("No results");
+//     }
   
-    results.forEach(result => {
-      console.log("\n");
-      // console.log(result)
-      console.log(`Title: ${result.title}`);
-      console.log(`Link: ${result.link}`);
-      console.log(`Time Posted: ${result.postTime}`);
-      console.log(`Number of Comments: ${result.commentsNo}`);
-      console.log(`Upvotes: ${result.score}`);
-      console.log("\n");
-    });
-  
-    await reddit.close();
-  })();
-}
+//     results.forEach(result => {
+//       console.log("\n");
+//       // console.log(result)
+//       console.log(`Title: ${result.title}`);
+//       console.log(`Number of Comments: ${result.commentsNo}`);
+//       console.log(`Number of Upvotes: ${result.score}`);
+//       console.log(`Posted By: ${result.authorName}`)
+//       console.log(`Time Posted: ${result.postTime}`);
+//       console.log(`Post URL: ${result.link}`);
+//     //   console.log("\n");
+//     });
+    
+//     var d = new Date();
+//     var fileName= d.getTime();
+//     var dir = './reddit/data';
+
+//     if (!fs.existsSync(dir)){
+//         fs.mkdirSync(dir);
+//     }
+
+//     fs.writeFile("./reddit/data/"+String(fileName)+'.json', JSON.stringify(results), (err) => {
+//         // throws an error, you could also catch it here
+//         if (err) throw err;
+//         // success case, the file was saved
+// 		console.log("\n");
+//         console.log('Posts are Saved in the file! ' + String(fileName) );
+//     });
+
+
+//     await reddit.close();
+//   })();
+// }
 
 /*const app = express();
 
@@ -122,7 +139,7 @@ switch (arg_values[0]) {
         break;
     case 'reddit':
         (async () => {
-          await callReddit();
+		await reddit.scrapReddit();
         })(); 
         break;
     default:
