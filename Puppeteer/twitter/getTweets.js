@@ -1,8 +1,6 @@
 const puppeteer = require('puppeteer');
 const jsdom = require("jsdom")
 const fs = require('fs');
-const { exit } = require('process');
-const { pathToFileURL } = require('url');
 const {JSDOM} = jsdom;
 global.DOMParser = new JSDOM().window.DOMParser;
 const isHeadless = false;
@@ -28,46 +26,18 @@ async function autoScroll(page) {
     });
 }
 
-async function getTweetData(page,tweet_url,tweets_meta){
-    /* building the search url and navigating to that page */
-    await page.goto(tweet_url,{ waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1000);
-
-    const storyHtml = await page.content();
-    const dom = new JSDOM(storyHtml);
-    await page.waitForTimeout(10000);
-    article = dom.window.document.querySelector('article');
-    tweet_content = {}
-    tweet_content['tweet_id'] = tweets_meta['id'];
-    tweet_content['tweet_link'] = tweet_url;
-    tweet_content['tweet_raw'] = tweets_meta['tweet_content'];
-    tweet_content['header'] = '';
-    tweet_content['body'] = '';
-    tweet_content['footer'] = '';
-    if(article!=undefined){
-        header = article.querySelector('div[data-testid="tweet"]').textContent;
-        tweet_body = article.querySelector('div[lang="en"]').textContent
-        tweet_remaining = article.textContent.replace(header+tweet_body,"");
-        tweet_content['header'] = header;
-        tweet_content['body'] = tweet_body;
-        tweet_content['footer'] = tweet_remaining;
-    }
-    return tweet_content;
-}
 
 async function getTwitterPost(page,searchword,pageScrollLength){
    
+    // await page.waitForTimeout(1000000);
     /* building the search url and navigating to that page */
-    var url = "https://twitter.com/search?q="+searchword+"&src=typed_query";
-    // await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/73.0.3683.75 Safari/537.36');
-    // await page.setExtraHTTPHeaders({
-    //     'Accept-Language': 'en-US,en;q=0.9'
-    // });
-    const response = await page.goto(url,{ waitUntil: 'domcontentloaded' });
+    var url = "https://mobile.twitter.com/search?q="+searchword+"&src=typed_query";
+    
+    const response = await page.goto(url,{ waitUntil: 'networkidle2' });
     //console.log(response);
 
     /* declared variable to collect fetched tweets */
-    var tweets = []
+    var tweets = {}
 
     for(var i =0;i<pageScrollLength;i++){
         console.log("\nPage scroll : ", i,"\n");
@@ -77,7 +47,7 @@ async function getTwitterPost(page,searchword,pageScrollLength){
         const dom = new JSDOM(storyHtml);
 
         await page.waitForTimeout(1000);
-        console.log(storyHtml);
+        //console.log(storyHtml);
         /* evaluating all the tweets from the html page */
         articles = dom.window.document.querySelectorAll('article');
         // console.log(articles);
@@ -92,27 +62,32 @@ async function getTwitterPost(page,searchword,pageScrollLength){
                 var header = articles[k].querySelector('div[dir="ltr"]').textContent;
                 var tweet_content = articles[k].textContent;
                 var tweet_time = articles[k].querySelector('time').getAttribute('datetime');
-                tweet["id"] = tweet_id;
-                tweet["tweetlink"] = tweet_link;
-                tweet['header'] = header;
-                tweet["tweetcontent"] = tweet_content;
-                tweet['footer'] = tweet_likes;
+                tweet["tweet_id"] = tweet_id;
+                tweet["tweet_link"] = tweet_link;
+                tweet['tweet_user'] = header;
+                tweet["tweet_text"] = tweet_content;
+                tweet['replies_retweets_likes'] = tweet_likes;
                 tweet['tweet_time'] = tweet_time;
-                tweets.push(tweet);
+                tweet_likes = tweet_likes.split(',');
+                for(var r=0;r<tweet_likes.length;r++){
+                    if(tweet_likes[r].includes("replies")){
+                        tweet['tweet_reply'] = tweet_likes[r];
+                    }
+                    else if(tweet_likes[r].includes("Retweets")){
+                        tweet['tweet_retweet'] = tweet_likes[r];
+                    }
+                    else if(tweet_likes[r].includes("likes")){
+                        tweet['tweet_favorite'] = tweet_likes[r];
+                    }
+                }
+                tweets[tweet_id]=tweet;
             }
         }
         await page.waitForTimeout(1000);
     }
-    // tweets_clean = [];
-    // for(var i=0;i<tweets.length;i++){
-    //     console.log(tweets[i].tweetlink);
-    //     tweet_url = "https://mobile.twitter.com"+tweets[i].tweetlink;
-    //     tweet_data = await getTweetData(page,tweet_url,tweets[i]);
-    //     tweets_clean.push(tweet_data);
-    // }
 
     console.log(tweets);
-    return tweets;
+    return Object.values(tweets);
 }
 
 
@@ -122,17 +97,9 @@ async function logIn(page,email,password) {
         var page_code = false;
         var login_flag = false;
         try{
-           
-            // await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36');
-            // await page.setExtraHTTPHeaders({
-            //     'Accept-Language': 'en-US,en;q=0.9'
-            // });
-            const response = await page.goto('https://twitter.com/login', {
-                timeout: 0,
-                waitUntil: "domcontentloaded"
-              });
-            console.log("Response navigation code: ", response);
-            
+            //await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36');
+            const response = await page.goto('https://mobile.twitter.com/login',{waitUntil: 'networkidle2'});
+            //console.log("Response navigation code: ", response);
             page_code =true;
 
             try {
@@ -167,21 +134,21 @@ async function logIn(page,email,password) {
 exports.scrapeTweets = async function(pageScrollLength,accountNo,keywords){
 
     /* Defining our custom browser setup here */
-    const browser = await puppeteer.launch({headless:false,args: ['--no-sandbox', '--disable-setuid-sandbox','--enable-features=ExperimentalJavaScript','--enable-javascript-harmony'
+    const browser = await puppeteer.launch({headless:isHeadless,args: ['--no-sandbox', '--disable-setuid-sandbox','--enable-features=ExperimentalJavaScript','--enable-javascript-harmony'
     ,'--lang=en-US,en;q=0.9'],slowMo: 10,userDataDir: './twitter/myUserDataDir'})
     const page = await browser.newPage()
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
+    //await page.setUserAgentString('Mozilla/5.0 (compatible, MSIE 11, Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko')
     await page.setExtraHTTPHeaders({
         'Accept-Language': 'en-US,en;q=0.9',
-        'server': 'tsa_a',
-        'content-security-policy': "connect-src 'self' blob: https://*.giphy.com https://*.pscp.tv https://*.video.pscp.tv https://*.twimg.com https://api.twitter.com https://api-stream.twitter.com https://ads-api.twitter.com https://caps.twitter.com https://media.riffsy.com https://pay.twitter.com https://sentry.io https://ton.twitter.com https://twitter.com https://upload.twitter.com https://www.google-analytics.com https://app.link https://api2.branch.io https://bnc.lt https://vmap.snappytv.com https://vmapstage.snappytv.com https://vmaprel.snappytv.com https://vmap.grabyo.com https://dhdsnappytv-vh.akamaihd.net https://pdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mpdhdsnappytv-vh.akamaihd.net https://mmdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mpdhdsnappytv-vh.akamaihd.net https://mmdhdsnappytv-vh.akamaihd.net https://dwo3ckksxlb0v.cloudfront.net ; default-src 'self'; form-action 'self' https://twitter.com https://*.twitter.com; font-src 'self' https://*.twimg.com; frame-src 'self' https://twitter.com https://mobile.twitter.com https://pay.twitter.com https://cards-frame.twitter.com ; img-src 'self' blob: data: https://*.cdn.twitter.com https://ton.twitter.com https://*.twimg.com https://analytics.twitter.com https://cm.g.doubleclick.net https://www.google-analytics.com https://www.periscope.tv https://www.pscp.tv https://media.riffsy.com https://*.giphy.com https://*.pscp.tv https://*.periscope.tv https://prod-periscope-profile.s3-us-west-2.amazonaws.com https://platform-lookaside.fbsbx.com https://scontent.xx.fbcdn.net https://*.googleusercontent.com; manifest-src 'self'; media-src 'self' blob: https://twitter.com https://*.twimg.com https://*.vine.co https://*.pscp.tv https://*.video.pscp.tv https://*.giphy.com https://media.riffsy.com https://dhdsnappytv-vh.akamaihd.net https://pdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mpdhdsnappytv-vh.akamaihd.net https://mmdhdsnappytv-vh.akamaihd.net https://mdhdsnappytv-vh.akamaihd.net https://mpdhdsnappytv-vh.akamaihd.net https://mmdhdsnappytv-vh.akamaihd.net https://dwo3ckksxlb0v.cloudfront.net; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.twimg.com   https://www.google-analytics.com https://twitter.com https://app.link  'nonce-ZWI3NTg5YjYtNGY5Yi00OWI2LWE1NmYtNThkYzZiY2IxNjAy'; style-src 'self' 'unsafe-inline' https://*.twimg.com; worker-src 'self' blob:; report-uri https://twitter.com/i/csp_report?a=O5RXE%3D%3D%3D&ro=false"
+        'server': 'tsa_a'
     });
     await page.setJavaScriptEnabled(true);
     console.log(await page.evaluate(()=>navigator.userAgent));
     const context = browser.defaultBrowserContext();
-    context.overridePermissions("https://twitter.com", ["geolocation", "notifications"]);
+    context.overridePermissions("https://mobile.twitter.com", ["geolocation", "notifications"]);
     await page.setViewport({width: 1280, height: 800});
-    
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36');
+
     /* Reading twitter logins from accounts.json file */
     var twitterLogin;
     twitterLogin = fs.readFileSync('./twitter/accounts.json'); 
