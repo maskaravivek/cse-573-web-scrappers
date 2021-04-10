@@ -6,7 +6,17 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import com.opencsv.CSVWriter;
+import com.opencsv.bean.StatefulBeanToCsv;
+import com.opencsv.bean.StatefulBeanToCsvBuilder;
+import com.opencsv.exceptions.CsvDataTypeMismatchException;
+import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
+
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -21,14 +31,14 @@ import java.util.List;
 
 public class Application {
 	
-	static String userName="maskaravivek";
-	static String passWord="0FF1cer@vvk123";
+	static String userName="davidwarner2306@gmail.com";
+	static String passWord="";
 	static String twitterBaseURL = "https://twitter.com/";
 	static String login = "login";
 	static String home = "home";
 	static int totalScrolls = 10;
 	
-	public static void main(String[] args) throws InterruptedException, IOException{
+	public static void main(String[] args) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException{
 		
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("start-maximized"); 
@@ -46,7 +56,6 @@ public class Application {
 		
 		login(driver);
 		Thread.sleep(20000);
-		
 		
 		
 		String keyWords[] = new String[] {"#ElonMusk"};
@@ -90,16 +99,19 @@ public class Application {
 	 * @param keyWord
 	 * @param totalScrolls
 	 * @throws InterruptedException
+	 * @throws CsvRequiredFieldEmptyException 
+	 * @throws CsvDataTypeMismatchException 
+	 * @throws IOException 
 	 */
 	
-	public static void getTweetByKeywords(WebDriver driver,String keyWord,int totalScrolls) throws InterruptedException{
+	public static void getTweetByKeywords(WebDriver driver,String keyWord,int totalScrolls) throws InterruptedException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException, IOException{
 		WebElement tweetBox = driver.findElement(By.xpath("//div/input[@data-testid='SearchBox_Search_Input']"));
 		tweetBox.clear();		
 		tweetBox.sendKeys(keyWord);
 		tweetBox.sendKeys(Keys.RETURN);
 		
 		Thread.sleep(20000);
-		
+		List<Tweet> tweetList = new ArrayList<Tweet>();
 		while(totalScrolls>0){
 			Thread.sleep(10000);
 			List<WebElement> tweet_divs = driver.findElements(By.xpath("//div[@data-testid='tweet']")); 
@@ -120,10 +132,27 @@ public class Application {
 				System.out.println("Retweets: "+retweets);
 				System.out.println("Likes: "+likes);
 				System.out.println();
+				
+				tweetList.add(new Tweet(sb.toString(),comments,retweets,likes));
 			}
 			scroll(driver);
 			totalScrolls--;
-	   }
+	    }
+		CustomMappingStrategy<Tweet> mappingStrategy = new CustomMappingStrategy<>();
+		mappingStrategy.setType(Tweet.class);
+
+		String fileName = new StringBuilder().append(keyWord).append(".csv").toString();
+	    Writer writer = new FileWriter(fileName);
+	    StatefulBeanToCsv<Tweet> csvwriter = new StatefulBeanToCsvBuilder<Tweet>(writer)
+	                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
+	                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
+	                .withOrderedResults(false)
+	                .withMappingStrategy(mappingStrategy)
+	                .build();
+	    csvwriter.write(tweetList);
+	    writer.close();
+  
+	   
 	}
 	
 	/**
@@ -132,14 +161,18 @@ public class Application {
 	 * @param twitterUsername
 	 * @param totalScrolls
 	 * @throws InterruptedException
+	 * @throws IOException 
+	 * @throws CsvRequiredFieldEmptyException 
+	 * @throws CsvDataTypeMismatchException 
 	 */
 	
-	public static void getAllTweetsOfAUser(WebDriver driver,String twitterUsername,int totalScrolls) throws InterruptedException{
+	public static void getAllTweetsOfAUser(WebDriver driver,String twitterUsername,int totalScrolls) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException{
 		
 		String profileURL = new StringBuilder(twitterBaseURL).append(twitterUsername).toString();
 		driver.get(profileURL);
 		Thread.sleep(20000);
-		
+		List<Tweet> tweetList = new ArrayList<Tweet>();
+
 		while(totalScrolls>0){
 			Thread.sleep(10000);
 			List<WebElement> tweet_divs = driver.findElements(By.xpath("//div[@data-testid='tweet']")); 
@@ -160,10 +193,26 @@ public class Application {
 				System.out.println("Retweets: "+retweets);
 				System.out.println("Likes: "+likes);
 				System.out.println();
+				tweetList.add(new Tweet(sb.toString(),comments,retweets,likes));
+
 			}
 			scroll(driver);
 			totalScrolls--;
-	   }
+	    }
+		CustomMappingStrategy<Tweet> mappingStrategy = new CustomMappingStrategy<>();
+		mappingStrategy.setType(Tweet.class);
+
+		String fileName = new StringBuilder().append(twitterUsername).append(".csv").toString();
+	    Writer writer = new FileWriter(fileName);
+	    StatefulBeanToCsv<Tweet> csvwriter = new StatefulBeanToCsvBuilder<Tweet>(writer)
+	                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
+	                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
+	                .withOrderedResults(false)
+	                .withMappingStrategy(mappingStrategy)
+	                .build();
+	    csvwriter.write(tweetList);
+	    writer.close();
+
 	}
 	
 
@@ -243,5 +292,9 @@ public class Application {
 		WebElement tweetButton = driver.findElement(By.xpath("//div[@data-testid='tweetButtonInline']"));
 		tweetButton.click();
 	}
+	
+	
+	
+
 	
 }

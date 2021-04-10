@@ -17,6 +17,11 @@
     </build>
     <name>Twitter Automation using Java</name>
   <dependencies>
+  	  <dependency>
+		    <groupId>com.opencsv</groupId>
+		    <artifactId>opencsv</artifactId>
+		    <version>5.2</version>
+	  </dependency>
 	  <dependency>
 	        <groupId>org.seleniumhq.selenium</groupId>
 	        <artifactId>selenium-java</artifactId>
