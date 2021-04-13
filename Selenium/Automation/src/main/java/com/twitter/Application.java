@@ -1,11 +1,13 @@
 package com.twitter;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
 
 import com.opencsv.CSVWriter;
 import com.opencsv.bean.StatefulBeanToCsv;
@@ -13,11 +15,13 @@ import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 
 
@@ -31,13 +35,19 @@ import java.util.List;
 
 public class Application {
 	
+//	static String userName="kjamieson679@gmail.com";
+//	static String passWord="";
+
 	static String userName="davidwarner2306@gmail.com";
 	static String passWord="";
 	static String twitterBaseURL = "https://twitter.com/";
+	static String mobileTwitterBaseURL = "https://mobile.twitter.com/";
 	static String login = "login";
 	static String home = "home";
-	static int totalScrolls = 10;
-	
+	static int totalScrolls = 1;
+	static String mobileTwitterSearchStart = "https://mobile.twitter.com/search?q=";
+	static String mobileTwitterSearchEnd = "&src=typed_query";
+
 	public static void main(String[] args) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException{
 		
 		ChromeOptions options = new ChromeOptions();
@@ -49,20 +59,26 @@ public class Application {
 		options.addArguments("--disable-browser-side-navigation"); 
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-notifications");
-		
+		options.addArguments("--enable-precise-memory-info"); 
+
+	    LoggingPreferences logPrefs = new LoggingPreferences();
+	    logPrefs.enable( LogType.PERFORMANCE, Level.ALL );
+	    options.setCapability( "goog:loggingPrefs", logPrefs );
+	    options.setExperimentalOption("w3c", false);
+
 		System.setProperty("webdriver.chrome.driver", "chromedriver");
 		WebDriver driver = new ChromeDriver(options);
 		
-		
+
 		login(driver);
 		Thread.sleep(20000);
 		
 		
-		String keyWords[] = new String[] {"#ElonMusk"};
+		String keyWords[] = new String[] {"ElonMusk"};
 		
 		for(String keyWord:keyWords) {
 			System.out.println("***************************START********************************");
-			getTweetByKeywords(driver, keyWord, totalScrolls);
+			getTweetByKeywords(driver,keyWord,totalScrolls);
 			System.out.println("***************************END********************************");
 		}
 		
@@ -85,12 +101,19 @@ public class Application {
 		Thread.sleep(20000);
 		logout(driver);
 		Thread.sleep(20000);
+		
+		List<LogEntry> logs = driver.manage().logs().get(LogType.PERFORMANCE).getAll();
+		for(LogEntry log:logs) {
+			for(String key : log.toJson().keySet())
+				System.out.println(log.toJson().get(key));
+		}
+		JavascriptExecutor executor = (JavascriptExecutor) driver;
+		long value = (long) executor.executeScript("return window.performance.memory.usedJSHeapSize");
+		long valueInMB = value / (1024 * 1024);
+		System.out.println("Heap Size: "+valueInMB);
 		driver.quit();
 
 	}
-	
-	
-
 	
 	/**
 	 *  Gets all the tweets for a given hashtag/keyword
@@ -105,39 +128,81 @@ public class Application {
 	 */
 	
 	public static void getTweetByKeywords(WebDriver driver,String keyWord,int totalScrolls) throws InterruptedException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException, IOException{
-		WebElement tweetBox = driver.findElement(By.xpath("//div/input[@data-testid='SearchBox_Search_Input']"));
-		tweetBox.clear();		
-		tweetBox.sendKeys(keyWord);
-		tweetBox.sendKeys(Keys.RETURN);
-		
-		Thread.sleep(20000);
 		List<Tweet> tweetList = new ArrayList<Tweet>();
+		String url = new StringBuilder(mobileTwitterSearchStart).append(keyWord).append(mobileTwitterSearchEnd).toString();
+		System.out.println(url);
+		driver.get(url);
+
 		while(totalScrolls>0){
-			Thread.sleep(10000);
-			List<WebElement> tweet_divs = driver.findElements(By.xpath("//div[@data-testid='tweet']")); 
-			for(WebElement div:tweet_divs) {
-				List<WebElement> spans = div.findElements(By.xpath(".//div/span")); 
-				StringBuilder sb = new StringBuilder();
-				System.out.println("Tweet Content: ");
-				for(int i=0;i<spans.size()-3;i++) {
-					WebElement span = spans.get(i);
-					sb.append(span.getText()).append(" ");
+
+			Thread.sleep(20000);
+			List<WebElement> articles = driver.findElements(By.xpath(".//article")); 
+			for(WebElement article:articles) {
+				if(article.findElements(By.xpath(".//a[@aria-label]")).size()>0) {
+					String tweetLink = article.findElement(By.xpath(".//a[@dir='auto']")).getAttribute("href");
+					String userName = article.findElement(By.xpath(".//div[@dir='ltr']")).getText();
+					String time = article.findElement(By.tagName("time")).getAttribute("datetime");
+					String tweetContent = article.getText();
+					String likes = article.findElement(By.xpath(".//div[@aria-label][@role='group']")).getAttribute("aria-label");
+					
+					
+	                String tweetLikes[] = likes.split(",");
+	                String replyCount = "0 replies";
+	                String retweetCount = "0 Retweets";
+	                String likeCount = "0 likes";
+	                for(int i=0;i<tweetLikes.length;i++){
+	                    if(tweetLikes[i].contains("replies")){
+	                    	replyCount = tweetLikes[i];
+	                    }
+	                    else if(tweetLikes[i].contains("Retweets")){
+	                    	retweetCount = tweetLikes[i];
+	                    }
+	                    else if(tweetLikes[i].contains("likes")){
+	                    	likeCount = tweetLikes[i];
+	                    }
+	                }
+	                String tweetBody = tweetContent.replaceAll("[\\t\\n\\r]+"," ").replaceAll(",", " ");
+
+	                String arr[] = tweetLink.split("/");
+	                String id = arr[arr.length-1];
+	                System.out.println("************************");
+					System.out.println(tweetLink);
+					System.out.println("----------");
+					System.out.println(id);
+					System.out.println("----------");
+					System.out.println(userName);
+					System.out.println("----------");
+					System.out.println(time);
+					System.out.println("----------");
+					System.out.println(tweetBody);
+					System.out.println("----------");
+					System.out.println(likes);
+					System.out.println("----------");
+					System.out.println(replyCount);
+					System.out.println("----------");
+					System.out.println(retweetCount);
+					System.out.println("----------");
+					System.out.println(likeCount);
+					System.out.println("----------");
+					System.out.println("************************");
+					
+					Tweet tweet = new Tweet();
+					tweet.setBody(tweetBody);
+					tweet.setCommentCount(replyCount);
+					tweet.setId(id);
+					tweet.setLikeCount(likeCount);
+					tweet.setLink(tweetLink);
+					tweet.setTime(time);
+					tweet.setUsername(userName);
+					tweet.setRetweetCount(retweetCount);
+					tweetList.add(tweet);
 				}
-				System.out.println(sb.toString());
-				String comments = spans.get(spans.size()-3).getText().isBlank() ? "0" : spans.get(spans.size()-3).getText();
-				String retweets = spans.get(spans.size()-2).getText().isBlank() ? "0" : spans.get(spans.size()-2).getText();
-				String likes = spans.get(spans.size()-1).getText().isBlank() ? "0" : spans.get(spans.size()-1).getText();
 				
-				System.out.println("Comments: "+comments); 
-				System.out.println("Retweets: "+retweets);
-				System.out.println("Likes: "+likes);
-				System.out.println();
-				
-				tweetList.add(new Tweet(sb.toString(),comments,retweets,likes));
 			}
 			scroll(driver);
 			totalScrolls--;
-	    }
+
+		}
 		CustomMappingStrategy<Tweet> mappingStrategy = new CustomMappingStrategy<>();
 		mappingStrategy.setType(Tweet.class);
 
@@ -146,14 +211,17 @@ public class Application {
 	    StatefulBeanToCsv<Tweet> csvwriter = new StatefulBeanToCsvBuilder<Tweet>(writer)
 	                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
 	                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
-	                .withOrderedResults(false)
+	                .withOrderedResults(true)
 	                .withMappingStrategy(mappingStrategy)
 	                .build();
 	    csvwriter.write(tweetList);
 	    writer.close();
-  
-	   
+
+		
 	}
+
+	
+	
 	
 	/**
 	 *  Gets all the tweets for a given user
@@ -168,37 +236,81 @@ public class Application {
 	
 	public static void getAllTweetsOfAUser(WebDriver driver,String twitterUsername,int totalScrolls) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException{
 		
-		String profileURL = new StringBuilder(twitterBaseURL).append(twitterUsername).toString();
+		String profileURL = new StringBuilder(mobileTwitterBaseURL).append(twitterUsername).toString();
 		driver.get(profileURL);
-		Thread.sleep(20000);
+		System.out.println(profileURL);
 		List<Tweet> tweetList = new ArrayList<Tweet>();
 
 		while(totalScrolls>0){
-			Thread.sleep(10000);
-			List<WebElement> tweet_divs = driver.findElements(By.xpath("//div[@data-testid='tweet']")); 
-			for(WebElement div:tweet_divs) {
-				List<WebElement> spans = div.findElements(By.xpath(".//div/span")); 
-				StringBuilder sb = new StringBuilder();
-				System.out.println("Tweet Content: ");
-				for(int i=0;i<spans.size()-3;i++) {
-					WebElement span = spans.get(i);
-					sb.append(span.getText()).append(" ");
-				}
-				System.out.println(sb.toString());
-				String comments = spans.get(spans.size()-3).getText().isBlank() ? "0" : spans.get(spans.size()-3).getText();
-				String retweets = spans.get(spans.size()-2).getText().isBlank() ? "0" : spans.get(spans.size()-2).getText();
-				String likes = spans.get(spans.size()-1).getText().isBlank() ? "0" : spans.get(spans.size()-1).getText();
-				
-				System.out.println("Comments: "+comments); 
-				System.out.println("Retweets: "+retweets);
-				System.out.println("Likes: "+likes);
-				System.out.println();
-				tweetList.add(new Tweet(sb.toString(),comments,retweets,likes));
 
+			Thread.sleep(20000);
+			List<WebElement> articles = driver.findElements(By.xpath(".//article")); 
+			for(WebElement article:articles) {
+				if(article.findElements(By.xpath(".//a[@aria-label]")).size()>0) {
+					String tweetLink = article.findElement(By.xpath(".//a[@dir='auto']")).getAttribute("href");
+					String userName = article.findElement(By.xpath(".//div[@dir='ltr']")).getText();
+					String time = article.findElement(By.tagName("time")).getAttribute("datetime");
+					String tweetContent = article.getText();
+					String likes = article.findElement(By.xpath(".//div[@aria-label][@role='group']")).getAttribute("aria-label");
+					
+					
+	                String tweetLikes[] = likes.split(",");
+	                String replyCount = "0 replies";
+	                String retweetCount = "0 Retweets";
+	                String likeCount = "0 likes";
+	                for(int i=0;i<tweetLikes.length;i++){
+	                    if(tweetLikes[i].contains("replies")){
+	                    	replyCount = tweetLikes[i];
+	                    }
+	                    else if(tweetLikes[i].contains("Retweets")){
+	                    	retweetCount = tweetLikes[i];
+	                    }
+	                    else if(tweetLikes[i].contains("likes")){
+	                    	likeCount = tweetLikes[i];
+	                    }
+	                }
+	                String tweetBody = tweetContent.replaceAll("[\\t\\n\\r]+"," ").replaceAll(",", " ");
+
+	                String arr[] = tweetLink.split("/");
+	                String id = arr[arr.length-1];
+	                System.out.println("************************");
+					System.out.println(tweetLink);
+					System.out.println("----------");
+					System.out.println(id);
+					System.out.println("----------");
+					System.out.println(userName);
+					System.out.println("----------");
+					System.out.println(time);
+					System.out.println("----------");
+					System.out.println(tweetBody);
+					System.out.println("----------");
+					System.out.println(likes);
+					System.out.println("----------");
+					System.out.println(replyCount);
+					System.out.println("----------");
+					System.out.println(retweetCount);
+					System.out.println("----------");
+					System.out.println(likeCount);
+					System.out.println("----------");
+					System.out.println("************************");
+					
+					Tweet tweet = new Tweet();
+					tweet.setBody(tweetBody);
+					tweet.setCommentCount(replyCount);
+					tweet.setId(id);
+					tweet.setLikeCount(likeCount);
+					tweet.setLink(tweetLink);
+					tweet.setTime(time);
+					tweet.setUsername(userName);
+					tweet.setRetweetCount(retweetCount);
+					tweetList.add(tweet);
+				}
+				
 			}
 			scroll(driver);
 			totalScrolls--;
-	    }
+
+		}
 		CustomMappingStrategy<Tweet> mappingStrategy = new CustomMappingStrategy<>();
 		mappingStrategy.setType(Tweet.class);
 
@@ -207,7 +319,7 @@ public class Application {
 	    StatefulBeanToCsv<Tweet> csvwriter = new StatefulBeanToCsvBuilder<Tweet>(writer)
 	                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
 	                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
-	                .withOrderedResults(false)
+	                .withOrderedResults(true)
 	                .withMappingStrategy(mappingStrategy)
 	                .build();
 	    csvwriter.write(tweetList);
@@ -271,6 +383,7 @@ public class Application {
 	
 	public static void scroll(WebDriver driver){
 		JavascriptExecutor jse = (JavascriptExecutor)driver;
+		jse.executeScript("window.scrollTo(0, document.body.scrollHeight);");
 		jse.executeScript("window.scrollTo(0, document.body.scrollHeight);");
 	}
 	
