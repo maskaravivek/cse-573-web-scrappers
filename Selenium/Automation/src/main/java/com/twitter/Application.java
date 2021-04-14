@@ -44,7 +44,7 @@ public class Application {
 	static String mobileTwitterBaseURL = "https://mobile.twitter.com/";
 	static String login = "login";
 	static String home = "home";
-	static int totalScrolls = 1;
+	static int totalScrolls = 10;
 	static String mobileTwitterSearchStart = "https://mobile.twitter.com/search?q=";
 	static String mobileTwitterSearchEnd = "&src=typed_query";
 
