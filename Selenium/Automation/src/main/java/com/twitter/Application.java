@@ -34,12 +34,12 @@ import java.util.logging.Level;
  */
 
 public class Application {
-	
-//	static String userName="kjamieson679@gmail.com";
-//	static String passWord="";
 
-	static String userName="davidwarner2306@gmail.com";
-	static String passWord="";
+	static String userName="kjamieson679@gmail.com";
+	static String passWord="johncena@123";
+
+//	static String userName="davidwarner2306@gmail.com";
+//	static String passWord="";
 	static String twitterBaseURL = "https://twitter.com/";
 	static String mobileTwitterBaseURL = "https://mobile.twitter.com/";
 	static String login = "login";

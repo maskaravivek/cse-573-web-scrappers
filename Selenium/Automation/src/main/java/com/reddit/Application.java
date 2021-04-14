@@ -1,5 +1,12 @@
 package com.reddit;
 
+import com.opencsv.CSVWriter;
+import com.opencsv.bean.StatefulBeanToCsv;
+import com.opencsv.bean.StatefulBeanToCsvBuilder;
+import com.opencsv.exceptions.CsvDataTypeMismatchException;
+import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
+import com.twitter.CustomMappingStrategy;
+import com.twitter.Tweet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -8,7 +15,10 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -27,7 +37,7 @@ public class Application {
     static String home = "home";
     static int totalScrolls = 10;
 
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException {
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("start-maximized");
@@ -53,9 +63,10 @@ public class Application {
         driver.quit();
     }
 
-    public static void getPostsFromSubreddit(String subreddit, WebDriver driver, int totalScrolls) throws InterruptedException {
+    public static void getPostsFromSubreddit(String subreddit, WebDriver driver, int totalScrolls) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException {
         Thread.sleep(5000);
 
+        List<RedditPost> redditPosts = new ArrayList<>();
         driver.get(redditBaseURL + subreddit);
 
         while (totalScrolls > 0) {
@@ -82,12 +93,29 @@ public class Application {
                 System.out.println(comments);
                 System.out.println(postedAt);
                 System.out.println("-----------------------------------------------------");
+
+                RedditPost redditPost = new RedditPost(postTitle, postUrl, votes, postedBy, comments, postedAt);
+                redditPosts.add(redditPost);
                 idx++;
 
             }
             scroll(driver);
             totalScrolls--;
         }
+
+        CustomMappingStrategy<RedditPost> mappingStrategy = new CustomMappingStrategy<>();
+        mappingStrategy.setType(RedditPost.class);
+
+        String fileName = new StringBuilder().append(subreddit).append(".csv").toString();
+        Writer writer = new FileWriter(fileName);
+        StatefulBeanToCsv<RedditPost> csvwriter = new StatefulBeanToCsvBuilder<RedditPost>(writer)
+                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
+                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
+                .withOrderedResults(true)
+                .withMappingStrategy(mappingStrategy)
+                .build();
+        csvwriter.write(redditPosts);
+        writer.close();
     }
 
     /**
