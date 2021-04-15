@@ -71,7 +71,7 @@ public class Application {
 		
 
 		login(driver);
-		Thread.sleep(20000);
+		Thread.sleep(5000);
 		
 		
 		String keyWords[] = new String[] {"ElonMusk"};
@@ -98,9 +98,9 @@ public class Application {
 			System.out.println("***************************FINISHED********************************");
 		}
 		
-		Thread.sleep(20000);
+		Thread.sleep(5000);
 		logout(driver);
-		Thread.sleep(20000);
+		Thread.sleep(5000);
 		
 		List<LogEntry> logs = driver.manage().logs().get(LogType.PERFORMANCE).getAll();
 		for(LogEntry log:logs) {
@@ -135,7 +135,7 @@ public class Application {
 
 		while(totalScrolls>0){
 
-			Thread.sleep(20000);
+			Thread.sleep(5000);
 			List<WebElement> articles = driver.findElements(By.xpath(".//article")); 
 			for(WebElement article:articles) {
 				if(article.findElements(By.xpath(".//a[@aria-label]")).size()>0) {
@@ -243,7 +243,7 @@ public class Application {
 
 		while(totalScrolls>0){
 
-			Thread.sleep(20000);
+			Thread.sleep(5000);
 			List<WebElement> articles = driver.findElements(By.xpath(".//article")); 
 			for(WebElement article:articles) {
 				if(article.findElements(By.xpath(".//a[@aria-label]")).size()>0) {
@@ -340,7 +340,7 @@ public class Application {
 		String twitterLoginURL = new StringBuilder(twitterBaseURL).append(login).toString();
 		driver.get(twitterLoginURL);
 		driver.manage().window().maximize();
-		Thread.sleep(20000);
+		Thread.sleep(2000);
 		WebElement userTextField = driver.findElement(By.name("session[username_or_email]"));
 		userTextField.sendKeys(userName);
 

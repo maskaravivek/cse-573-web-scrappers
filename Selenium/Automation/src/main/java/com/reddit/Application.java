@@ -5,7 +5,6 @@ import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
-import com.twitter.CustomMappingStrategy;
 import com.twitter.Tweet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -14,12 +13,16 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 
 /**
@@ -35,7 +38,7 @@ public class Application {
     static String redditBaseURL = "https://reddit.com/";
     static String login = "login";
     static String home = "home";
-    static int totalScrolls = 10;
+    static int totalScrolls = 2;
 
     public static void main(String[] args) throws InterruptedException, IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException {
 
@@ -47,19 +50,33 @@ public class Application {
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--disable-browser-side-navigation");
         options.addArguments("--disable-gpu");
-		options.addArguments("--disable-notifications");
+        options.addArguments("--disable-notifications");
+
+        LoggingPreferences logPrefs = new LoggingPreferences();
+        logPrefs.enable( LogType.PERFORMANCE, Level.ALL );
+        options.setCapability( "goog:loggingPrefs", logPrefs );
+        options.setExperimentalOption("w3c", false);
 
         System.setProperty("webdriver.chrome.driver", "chromedriver");
         WebDriver driver = new ChromeDriver(options);
 
 
-//		login(driver);
-        Thread.sleep(1000);
+        login(driver);
+        Thread.sleep(3000);
 
         driver.get(redditBaseURL + "r/baseball/");
 
-        getPostsFromSubreddit("r/baseball/", driver, 5);
+        getPostsFromSubreddit("r/baseball/", driver, 2);
 //		Thread.sleep(20000);
+        List<LogEntry> logs = driver.manage().logs().get(LogType.PERFORMANCE).getAll();
+        for(LogEntry log:logs) {
+            for(String key : log.toJson().keySet())
+                System.out.println(log.toJson().get(key));
+        }
+        JavascriptExecutor executor = (JavascriptExecutor) driver;
+        long value = (long) executor.executeScript("return window.performance.memory.usedJSHeapSize");
+        long valueInMB = value / (1024 * 1024);
+        System.out.println("Heap Size: "+valueInMB);
         driver.quit();
     }
 
@@ -67,18 +84,25 @@ public class Application {
         Thread.sleep(5000);
 
         List<RedditPost> redditPosts = new ArrayList<>();
-        driver.get(redditBaseURL + subreddit);
 
+        String lastID = "";
         while (totalScrolls > 0) {
-            Thread.sleep(20000);
-            List<WebElement> postDivs = driver.findElements(By.className("scrollerItem"));
+            String url = redditBaseURL + subreddit;
+            if (!lastID.equals("")) {
+                url += "?count=10&after=" + lastID;
+            } else {
+                url += "?count=10";
+            }
 
-            int postsPerPage = 7;
+            driver.get(url);
+            Thread.sleep(5000);
+            List<WebElement> postDivs = driver.findElements(By.className("scrollerItem"));
             int idx = 0;
             for (WebElement postDiv : postDivs) {
-                if (idx > postsPerPage) {
+                if (idx >= 10) {
                     break;
                 }
+                String id = postDiv.getAttribute("id");
                 String postTitle = postDiv.findElement(By.xpath(".//div/div/div/a/div/h3")).getText();
                 String postUrl = postDiv.findElements(By.xpath(".//div/div/div/a")).get(1).getAttribute("href");
                 String votes = postDiv.findElement(By.xpath(".//div/div/div")).getText();
@@ -96,17 +120,16 @@ public class Application {
 
                 RedditPost redditPost = new RedditPost(postTitle, postUrl, votes, postedBy, comments, postedAt);
                 redditPosts.add(redditPost);
+                lastID = id;
                 idx++;
-
             }
-            scroll(driver);
             totalScrolls--;
         }
 
         CustomMappingStrategy<RedditPost> mappingStrategy = new CustomMappingStrategy<>();
         mappingStrategy.setType(RedditPost.class);
 
-        String fileName = new StringBuilder().append(subreddit).append(".csv").toString();
+        String fileName = new StringBuilder().append(subreddit.replace("r/", "").replace("/", "")).append(".csv").toString();
         Writer writer = new FileWriter(fileName);
         StatefulBeanToCsv<RedditPost> csvwriter = new StatefulBeanToCsvBuilder<RedditPost>(writer)
                 .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
