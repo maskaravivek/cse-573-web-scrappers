@@ -14,6 +14,8 @@ The repo is organized in the following way:
 
 ### Selenium
 
+The demo app is coded in Java. You will need Java setup on your machine to run the demo. 
+
 - The [Selenium directory](Selenium/Automation/src/main/java/com/) has two sub folders for `reddit` and `twitter`. Browse to the respective directory to scrap the website. 
 - The directory contains an `Application.java` class which can be executed to run the demo
 - The `Application.java` class contains `userName` and `passWord` fields. Replace the values with actual username/password. 
