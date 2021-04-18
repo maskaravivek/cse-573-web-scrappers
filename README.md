@@ -22,5 +22,9 @@ The demo app is coded in Java. You will need Java setup on your machine to run t
 - Run the `main()` function to run the demo
 
 ### Scrapy
-
+- Browse to the Scrapy directory. The Spider directory has two crawlers for reddit and twitter. 
+- Put the input hashtags, user (in case of twitter) , topics(in case of reddit) in a .csv file format.
+- Run the crawler for the respective website as below to run the demo
+    - scrapy crawl reddit -a filename=input_File_name -o outputfile_name 
+    - scrapy crawl twitter -a filename=input_File_name -o outputfile_name
 ### Puppeteer
