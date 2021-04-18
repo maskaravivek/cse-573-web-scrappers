@@ -7,8 +7,8 @@ The repo is organized in the following way:
 
 # Presentations
 
-[Proposal](https://docs.google.com/presentation/d/1A60OiPRnWJ3sxCQvZCl3bA-z5YHV7PkLgeeBQsJ8JO8/edit)
-[Group demo][https://docs.google.com/presentation/d/1QcPta1kwV7eqlqRTU3g-KkIfS7azMmWFqFT0r50ewV4/edit]
+- [Proposal](https://docs.google.com/presentation/d/1A60OiPRnWJ3sxCQvZCl3bA-z5YHV7PkLgeeBQsJ8JO8/edit)
+- [Group demo](https://docs.google.com/presentation/d/1QcPta1kwV7eqlqRTU3g-KkIfS7azMmWFqFT0r50ewV4/edit)
 
 ## How to run the tools?
 
