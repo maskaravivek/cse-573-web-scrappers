@@ -21,7 +21,7 @@ The demo app is coded in Java. You will need Java setup on your machine to run t
 - The `Application.java` class contains `userName` and `passWord` fields. Replace the values with actual username/password. 
 - Run the `main()` function to run the demo
 
-Output files: [Output Dir](Selenium/output)
+Output files: [Output Directory](Selenium/output)
 
 ### Scrapy
 - Browse to the Scrapy directory. The Spider directory has two crawlers for reddit and twitter. 
