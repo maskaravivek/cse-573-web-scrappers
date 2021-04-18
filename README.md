@@ -47,7 +47,7 @@ Output files: [Output Directory](Scrapy/output)
   * For facebook ` node app.js facebook 2`
   * For Twitter ` node app.js twitter 2`
   * For Reddit ` node app.js reddit`
-  * If you don't pass the argument, the default page scroll length is taken as 1.
+  * If you don't pass the pagescroll length argument, the default page scroll length is taken as 1.
 * The output will be saved in corresponding data folders of facebook, twitter and reddit
   * Facebook output [Output Directory](Puppeteer/facebook/data)
   * Twitter output [Output Directory](Puppeteer/twitter/data)
