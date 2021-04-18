@@ -29,4 +29,6 @@ Output files: [Output Directory](Selenium/output)
 - Run the crawler for the respective website as below to run the demo
     - `scrapy crawl reddit -a filename=input_File_name -o outputfile_name`
     - `scrapy crawl twitter -a filename=input_File_name -o outputfile_name`
+
+Output files: [Output Directory](Scrapy/output)
 ### Puppeteer
