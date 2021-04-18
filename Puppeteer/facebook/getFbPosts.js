@@ -5,7 +5,7 @@ const {JSDOM} = jsdom
 const HashMap = require('hashmap');
 var fs = require("fs");
 global.DOMParser = new JSDOM().window.DOMParser
-const isHeadless = true;
+const isHeadless = false;
 
 
 async function autoScroll(page) {
@@ -91,14 +91,14 @@ async function getArticleDetails(page,pagelink,postid,groupid){
                 postshares = dom.window.document.querySelector("span[data-sigil='feed-ufi-sharers']").textContent;  
             }
             
-            postobj["profile_link"] = postProfileLink;
-            postobj["datetime"] = postDateTime;
-            postobj["content"] = postContent;
-            postobj["likes"] = postlikes;
-            postobj["likes_link"] = postlikeslink;
-            postobj["likedprofiles_list"] = likedprofiles['liked_profiles'];
-            postobj["shares"] = postshares;
-            postobj["postid"] = postid;
+            postobj["profile_link"] = JSON.stringify(postProfileLink);
+            postobj["datetime"] = JSON.stringify(postDateTime);
+            postobj["content"] = String(JSON.stringify(postContent.replace(/\n/g, '')));
+            postobj["likes"] = JSON.stringify(postlikes);
+            postobj["likes_link"] = JSON.stringify(postlikeslink);
+            postobj["likedprofiles_list"] = JSON.stringify(likedprofiles['liked_profiles']);
+            postobj["shares"] = JSON.stringify(postshares);
+            postobj["postid"] = JSON.stringify(postid);
     
             
         }catch (e) {
@@ -213,12 +213,27 @@ async function logIn(page,email,password) {
         return true;
 }
 
+async function ConvertToCSV(objArray) {
+    var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+    var str = '';
+
+    for (var i = 0; i < array.length; i++) {
+        var line = '';
+        for (var index in array[i]) {
+            if (line != '') line += ','
+
+            line += array[i][index];
+        }
+
+        str += line + '\r\n';
+    }
+    return str;
+}
 
 
 exports.getAllGroup = async function(pageScrollLength,accountNo)
 {
 
-        
         //console.log(pageScrollLength);, '--no-sandbox',
         const browser = await puppeteer.launch({headless: isHeadless,args: ['--no-sandbox', '--disable-setuid-sandbox'],slowMo: 40,userDataDir: './facebook/myUserDataDir'})
         const page = await browser.newPage()
@@ -251,8 +266,18 @@ exports.getAllGroup = async function(pageScrollLength,accountNo)
         }
     	
         console.log(groupPost);
+        
+        var tobj = {};
+        lt = ["profile_link","datetime","content", "likes","likes_link","shares","postid","postlink"];
+        
+        for(var tval in lt){
+            tobj[lt[tval]] = lt[tval];
+        }
 
         allPostsData = [];
+        allPostsData.push(tobj);
+
+       
         for(var value in groupPost){
             let posts = groupPost[value];
             for(var tval in posts){
@@ -269,11 +294,11 @@ exports.getAllGroup = async function(pageScrollLength,accountNo)
             fs.mkdirSync(dir);
         }
 
-        fs.writeFile("./facebook/data/"+String(fileName)+'.json', JSON.stringify(allPostsData), (err) => {
-            // throws an error, you could also catch it here
+        var csv_data = await ConvertToCSV(allPostsData);
+        
+        fs.writeFile("./facebook/data/"+String(fileName)+'.csv', csv_data, (err) => {
             if (err) throw err;
-            // success case, the file was saved
-            console.log('Posts are Saved in the file! ' + String(fileName) );
+            console.log('All tweets scraped are saved in a file with name! ' + String(fileName) );
         });
         console.log("\nFinally retrevied posts are start: \n");
         console.log(JSON.stringify(allPostsData));

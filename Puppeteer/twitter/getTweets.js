@@ -5,7 +5,6 @@ const {JSDOM} = jsdom;
 global.DOMParser = new JSDOM().window.DOMParser;
 const isHeadless = false;
 
-
 async function autoScroll(page) {
     await page.evaluate(async () => {
         await new Promise((resolve, reject) => {
@@ -63,29 +62,18 @@ async function getTwitterPost(page,searchword,pageScrollLength){
                 var tweet_content = articles[k].textContent;
                 var tweet_time = articles[k].querySelector('time').getAttribute('datetime');
                 tweet["tweet_id"] = tweet_id;
-                tweet["tweet_link"] = tweet_link;
-                tweet['tweet_user'] = header;
-                tweet["tweet_text"] = tweet_content;
-                tweet['replies_retweets_likes'] = tweet_likes;
+                tweet["tweet_link"] = String(JSON.stringify(tweet_link));
+                tweet['tweet_user'] = String(JSON.stringify(header));
+                tweet["tweet_text"] = String(JSON.stringify(tweet_content.replace(/\n/g, '')));
+                var mt = tweet_likes;
+                tweet['replies_retweets_likes'] = String(JSON.stringify(mt));
                 tweet['tweet_time'] = tweet_time;
-                tweet_likes = tweet_likes.split(',');
-                for(var r=0;r<tweet_likes.length;r++){
-                    if(tweet_likes[r].includes("replies")){
-                        tweet['tweet_reply'] = tweet_likes[r];
-                    }
-                    else if(tweet_likes[r].includes("Retweets")){
-                        tweet['tweet_retweet'] = tweet_likes[r];
-                    }
-                    else if(tweet_likes[r].includes("likes")){
-                        tweet['tweet_favorite'] = tweet_likes[r];
-                    }
-                }
                 tweets[tweet_id]=tweet;
             }
         }
         await page.waitForTimeout(1000);
     }
-
+    //tweets = JSON.stringify(tweets);
     console.log(tweets);
     return Object.values(tweets);
 }
@@ -129,13 +117,30 @@ async function logIn(page,email,password) {
         
 }
 
+async function ConvertToCSV(objArray) {
+    var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+    var str = '';
+
+    for (var i = 0; i < array.length; i++) {
+        var line = '';
+        for (var index in array[i]) {
+            if (line != '') line += ','
+
+            line += array[i][index];
+        }
+
+        str += line + '\r\n';
+    }
+    return str;
+}
 
 
 exports.scrapeTweets = async function(pageScrollLength,accountNo,keywords){
 
     /* Defining our custom browser setup here */
     const browser = await puppeteer.launch({headless:isHeadless,args: ['--no-sandbox', '--disable-setuid-sandbox','--enable-features=ExperimentalJavaScript','--enable-javascript-harmony'
-    ,'--lang=en-US,en;q=0.9'],slowMo: 10,userDataDir: './twitter/myUserDataDir'})
+    ,'--lang=en-US,en;q=0.9','--proxy-server="direct://"',
+    '--proxy-bypass-list=*'],slowMo: 10,userDataDir: './twitter/myUserDataDir'})
     const page = await browser.newPage()
     //await page.setUserAgentString('Mozilla/5.0 (compatible, MSIE 11, Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko')
     await page.setExtraHTTPHeaders({
@@ -168,9 +173,15 @@ exports.scrapeTweets = async function(pageScrollLength,accountNo,keywords){
         /* Passing the keywords that we want to search for in twitter */
         console.log("We are searching for the following keywords on twitter ", keywords);
 
+        var tobj = {};
+        lt = ["tweet_id","tweet_link","tweet_user","tweet_text","replies_retweets_likes","tweet_time"]
+        
+        for(var tval in lt){
+            tobj[lt[tval]] = lt[tval];
+        }
 
         tweets_collected = [];
-
+        tweets_collected.push(tobj);
         /* Iterating over each word in keywords */
         for(var k=0;k<keywords.length;k++){
             var searchword = keywords[k];
@@ -191,8 +202,10 @@ exports.scrapeTweets = async function(pageScrollLength,accountNo,keywords){
         if (!fs.existsSync(dir)){
             fs.mkdirSync(dir);
         }
-
-        fs.writeFile("./twitter/data/"+String(fileName)+'.json', JSON.stringify(tweets_collected), (err) => {
+        console.table(tweets_collected);
+        var csv_data = await ConvertToCSV(tweets_collected);
+        
+        fs.writeFile("./twitter/data/"+String(fileName)+'.csv', csv_data, (err) => {
             if (err) throw err;
             console.log('All tweets scraped are saved in a file with name! ' + String(fileName) );
         });
@@ -201,6 +214,10 @@ exports.scrapeTweets = async function(pageScrollLength,accountNo,keywords){
         console.log("\n navigation failed. \n");
     }
     /* closing the browser after scraping the tweets */
+    
+    const metricsAfter = await page.metrics();
+    console.info(metricsAfter);
+    
     await browser.close();
 
 }
